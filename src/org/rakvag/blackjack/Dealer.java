@@ -24,8 +24,8 @@ public class Dealer {
         return Kort.tegnKorteneMedSum(this.kortene);
     }
 
-    public boolean kanTrekkeNyttKort() {
-        return Kort.finnSum(this.kortene) < 17;
+    public boolean maaStaa() {
+        return Kort.finnSum(this.kortene) >= 17;
     }
 
     public int finnSum() {
