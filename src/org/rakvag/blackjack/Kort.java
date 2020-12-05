@@ -35,7 +35,7 @@ public class Kort {
     }
 
     public enum Verdi {
-        EN("1"), TO("2"), TRE("3"), FIRE("4"), FEM("5"), SEKS("6"), SJU("7"),
+        TO("2"), TRE("3"), FIRE("4"), FEM("5"), SEKS("6"), SJU("7"),
         ATTE("8"), NI("9"), TI("10"), KNEKT("J", 10), DAME("Q", 10),
         KONGE("K", 10), ESS("A", 11);
 
