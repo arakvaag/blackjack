@@ -3,6 +3,7 @@ package org.rakvag.blackjack;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.rakvag.blackjack.domene.Spill;
+import org.rakvag.blackjack.domene.Spill.SpillDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,11 +26,11 @@ public class ApiController {
     @PostMapping(produces = {MediaType.APPLICATION_JSON_VALUE})
     public ResponseEntity<String> opprettNyttSpill(@RequestBody String requestBody) throws JsonProcessingException {
         @SuppressWarnings("unchecked")
-        Map<String, String> requestParams = (Map<String, String>) objectMapper.readValue(requestBody, Map.class);
+        Map<String, Object> requestParams = (Map<String, Object>) objectMapper.readValue(requestBody, Map.class);
 
-        Spill spill = spillServer.startNyttSpill(requestParams.get("spillersNavn"));
+        Spill spill = spillServer.startNyttSpill((String) requestParams.get("spillersNavn"));
 
-        return ResponseEntity.ok(objectMapper.writeValueAsString(new Spill.SpillDTO(spill)));
+        return ResponseEntity.ok(objectMapper.writeValueAsString(new SpillDTO(spill)));
     }
 
     @PostMapping(path = "/trekkKort", produces = {MediaType.APPLICATION_JSON_VALUE})
@@ -42,7 +43,7 @@ public class ApiController {
         } catch (Spill.SpillerErFullførtException e) {
             return ResponseEntity.badRequest().body("{\"feilmelding\": \"Spillet er fullført, kan ikke trekke flere kort.\"}");
         }
-        return ResponseEntity.ok(objectMapper.writeValueAsString(new Spill.SpillDTO(spill)));
+        return ResponseEntity.ok(objectMapper.writeValueAsString(new SpillDTO(spill)));
     }
 
     @PostMapping(path = "/staa", produces = {MediaType.APPLICATION_JSON_VALUE})
@@ -52,8 +53,10 @@ public class ApiController {
             spill = spillServer.hentAktivtSpill().stå();
         } catch (SpillServer.SpillIkkeStartetException e) {
             return ResponseEntity.badRequest().body("{\"feilmelding\": \"Det er ikke startet et spill enda, og det er derfor ikke mulig å trekke nytt kort.\"}");
+        } catch (Spill.SpillerErFullførtException e) {
+            return ResponseEntity.badRequest().body("{\"feilmelding\": \"Spillet er fullført.\"}");
         }
-        return ResponseEntity.ok(objectMapper.writeValueAsString(new Spill.SpillDTO(spill)));
+        return ResponseEntity.ok(objectMapper.writeValueAsString(new SpillDTO(spill)));
     }
 
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE})
@@ -64,7 +67,7 @@ public class ApiController {
         } catch (SpillServer.SpillIkkeStartetException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"feilmelding\": \"Det er ikke startet et spill enda.\"}");
         }
-        return ResponseEntity.ok(objectMapper.writeValueAsString(new Spill.SpillDTO(spill)));
+        return ResponseEntity.ok(objectMapper.writeValueAsString(new SpillDTO(spill)));
     }
 
 }

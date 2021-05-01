@@ -46,6 +46,7 @@ public class Spill {
         spillersKort.add(kortstokk.trekk().snuFaceUp());
         if (regnutPoengsum(spillersKort) > 21) {
             status = Status.SPILLER_BUST;
+            dealersKort.forEach(Kort::snuFaceUp);
         }
 
         return this;
@@ -70,6 +71,8 @@ public class Spill {
         } else {
             status = Status.DEALER_VANT_PAA_POENG;
         }
+
+        dealersKort.forEach(Kort::snuFaceUp);
 
         return this;
     }
@@ -108,21 +111,25 @@ public class Spill {
     public static class SpillerDTO {
         public final String navn;
         public final List<String> kort;
-        public final int poengsum;
+        public final String poengsum;
 
         public SpillerDTO(Spill spill) {
             this.navn = spill.spillersNavn;
             this.kort = spill.spillersKort.stream().map(Kort::toString).collect(Collectors.toList());
-            this.poengsum = spill.regnutPoengsum(spill.spillersKort);
+            this.poengsum = String.valueOf(spill.regnutPoengsum(spill.spillersKort));
         }
     }
     public static class DealerDTO {
         public final List<String> kort;
-        public final int poengsum;
+        public final String poengsum;
 
         public DealerDTO(Spill spill) {
             this.kort = spill.dealersKort.stream().map(Kort::toString).collect(Collectors.toList());
-            this.poengsum = spill.regnutPoengsum(spill.dealersKort);
+            if (spill.status == Status.I_GANG) {
+                this.poengsum = null;
+            } else {
+                this.poengsum = String.valueOf(spill.regnutPoengsum(spill.dealersKort));
+            }
         }
     }
 
