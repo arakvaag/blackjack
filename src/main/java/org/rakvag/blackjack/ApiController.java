@@ -3,8 +3,6 @@ package org.rakvag.blackjack;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.rakvag.blackjack.domene.Spill;
-import org.rakvag.blackjack.domene.Spill.SpillDTO;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +28,7 @@ public class ApiController {
 
         Spill spill = spillServer.startNyttSpill((String) requestParams.get("spillersNavn"));
 
-        return ResponseEntity.ok(objectMapper.writeValueAsString(new SpillDTO(spill)));
+        return ResponseEntity.ok(objectMapper.writeValueAsString(spill.lagDTO()));
     }
 
     @PostMapping(path = "/trekkKort", produces = {MediaType.APPLICATION_JSON_VALUE})
@@ -43,7 +41,7 @@ public class ApiController {
         } catch (Spill.SpillerErFullførtException e) {
             return ResponseEntity.badRequest().body("{\"feilmelding\": \"Spillet er fullført, kan ikke trekke flere kort.\"}");
         }
-        return ResponseEntity.ok(objectMapper.writeValueAsString(new SpillDTO(spill)));
+        return ResponseEntity.ok(objectMapper.writeValueAsString(spill.lagDTO()));
     }
 
     @PostMapping(path = "/staa", produces = {MediaType.APPLICATION_JSON_VALUE})
@@ -56,7 +54,7 @@ public class ApiController {
         } catch (Spill.SpillerErFullførtException e) {
             return ResponseEntity.badRequest().body("{\"feilmelding\": \"Spillet er fullført.\"}");
         }
-        return ResponseEntity.ok(objectMapper.writeValueAsString(new SpillDTO(spill)));
+        return ResponseEntity.ok(objectMapper.writeValueAsString(spill.lagDTO()));
     }
 
     @GetMapping(produces = {MediaType.APPLICATION_JSON_VALUE})
@@ -65,9 +63,9 @@ public class ApiController {
         try {
             spill = spillServer.hentAktivtSpill();
         } catch (SpillServer.SpillIkkeStartetException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"feilmelding\": \"Det er ikke startet et spill enda.\"}");
+            return ResponseEntity.badRequest().body("{\"feilmelding\": \"Det er ikke startet et spill enda.\"}");
         }
-        return ResponseEntity.ok(objectMapper.writeValueAsString(new SpillDTO(spill)));
+        return ResponseEntity.ok(objectMapper.writeValueAsString(spill.lagDTO()));
     }
 
 }

@@ -16,8 +16,9 @@ public class Kortstokk {
         }
     }
 
-    public void blandKortene() {
+    public Kortstokk blandKortene() {
         Collections.shuffle(kort);
+        return this;
     }
 
     public Kort trekk() {

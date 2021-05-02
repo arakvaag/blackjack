@@ -1,5 +1,7 @@
 package org.rakvag.blackjack.domene;
 
+import java.util.Objects;
+
 public class Kort {
 
     public enum Farge {
@@ -12,7 +14,7 @@ public class Kort {
     }
     public enum Verdi {
         TO("2"), TRE("3"), FIRE("4"), FEM("5"), SEKS("6"), SJU("7"),
-        ATTE("8"), NI("9"), TI("10"), KNEKT("J", 10), DAME("Q", 10),
+        ÅTTE("8"), NI("9"), TI("10"), KNEKT("J", 10), DAME("Q", 10),
         KONGE("K", 10), ESS("A", 11);
 
         public final String kode;
@@ -56,4 +58,16 @@ public class Kort {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Kort kort = (Kort) o;
+        return faceUp == kort.faceUp && farge == kort.farge && verdi == kort.verdi;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(farge, verdi, faceUp);
+    }
 }

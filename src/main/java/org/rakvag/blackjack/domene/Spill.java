@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 public class Spill {
 
-    public enum Status { I_GANG, DEALER_BUST, SPILLER_BUST, SPILLER_VANT_PAA_POENG, DEALER_VANT_PAA_POENG, SPILLER_VANT_MED_BLACKJACK, PUSH}
+    public enum Status { I_GANG, DEALER_BUST, SPILLER_BUST, SPILLER_VANT_PÅ_POENG, DEALER_VANT_PÅ_POENG, SPILLER_VANT_MED_BLACKJACK, DEALER_VANT_MED_BLACKJACK, UAVGJORT}
 
     private final Kortstokk kortstokk;
     private final String spillersNavn;
@@ -14,25 +14,33 @@ public class Spill {
     private final List<Kort> dealersKort;
     private Status status;
 
-    public Spill(String spillersNavn) {
+    public Spill(String spillersNavn, Kortstokk kortstokk) {
         this.spillersNavn = spillersNavn;
 
-        this.kortstokk = new Kortstokk();
+        this.kortstokk = kortstokk;
         kortstokk.blandKortene();
 
         this.spillersKort = new ArrayList<>();
-        this.spillersKort.add(kortstokk.trekk().snuFaceUp());
-        this.spillersKort.add(kortstokk.trekk().snuFaceUp());
-
         this.dealersKort = new ArrayList<>();
+        this.spillersKort.add(kortstokk.trekk().snuFaceUp());
         this.dealersKort.add(kortstokk.trekk().snuFaceUp());
+        this.spillersKort.add(kortstokk.trekk().snuFaceUp());
         this.dealersKort.add(kortstokk.trekk());
 
         //HVIS spillers poengsum allerede her er 21
         // OG dealeren ikke også har fått 21 allerede,
         // SÅ har spilleren fått BLACKJACK
-        if (regnutPoengsum(spillersKort) == 21 && regnutPoengsum(dealersKort) != 21) {
-            this.status = Status.SPILLER_VANT_MED_BLACKJACK;
+        if (regnutPoengsum(spillersKort) == 21) {
+            if (regnutPoengsum(dealersKort) != 21) {
+                this.status = Status.SPILLER_VANT_MED_BLACKJACK;
+                dealersKort.forEach(Kort::snuFaceUp);
+            } else if (regnutPoengsum(dealersKort) == 21) {
+                this.status = Status.UAVGJORT;
+                dealersKort.forEach(Kort::snuFaceUp);
+            }
+        } else if ((regnutPoengsum(dealersKort) == 21)) {
+            this.status = Status.DEALER_VANT_MED_BLACKJACK;
+            dealersKort.forEach(Kort::snuFaceUp);
         } else {
             this.status = Status.I_GANG;
         }
@@ -65,11 +73,11 @@ public class Spill {
         if (dealersPoengsum > 21) {
             status = Status.DEALER_BUST;
         } else if (spillersPoengsum == dealersPoengsum) {
-            status = Status.PUSH;
+            status = Status.UAVGJORT;
         } else if (spillersPoengsum > dealersPoengsum) {
-            status = Status.SPILLER_VANT_PAA_POENG;
+            status = Status.SPILLER_VANT_PÅ_POENG;
         } else {
-            status = Status.DEALER_VANT_PAA_POENG;
+            status = Status.DEALER_VANT_PÅ_POENG;
         }
 
         dealersKort.forEach(Kort::snuFaceUp);
@@ -98,37 +106,41 @@ public class Spill {
         return poengsum;
     }
 
+    public SpillDTO lagDTO() {
+        return new SpillDTO(this);
+    }
+
     public static class SpillDTO {
         public final SpillerDTO spillerDTO;
         public final DealerDTO dealerDTO;
-        public final String status;
-        public SpillDTO(Spill spill) {
+        public final Status status;
+        private SpillDTO(Spill spill) {
             this.spillerDTO = new SpillerDTO(spill);
             this.dealerDTO = new DealerDTO(spill);
-            this.status = spill.status.name();
+            this.status = spill.status;
         }
     }
     public static class SpillerDTO {
         public final String navn;
         public final List<String> kort;
-        public final String poengsum;
+        public final int poengsum;
 
-        public SpillerDTO(Spill spill) {
+        private SpillerDTO(Spill spill) {
             this.navn = spill.spillersNavn;
             this.kort = spill.spillersKort.stream().map(Kort::toString).collect(Collectors.toList());
-            this.poengsum = String.valueOf(spill.regnutPoengsum(spill.spillersKort));
+            this.poengsum = spill.regnutPoengsum(spill.spillersKort);
         }
     }
     public static class DealerDTO {
         public final List<String> kort;
-        public final String poengsum;
+        public final Integer poengsum;
 
-        public DealerDTO(Spill spill) {
+        private DealerDTO(Spill spill) {
             this.kort = spill.dealersKort.stream().map(Kort::toString).collect(Collectors.toList());
             if (spill.status == Status.I_GANG) {
                 this.poengsum = null;
             } else {
-                this.poengsum = String.valueOf(spill.regnutPoengsum(spill.dealersKort));
+                this.poengsum = spill.regnutPoengsum(spill.dealersKort);
             }
         }
     }
