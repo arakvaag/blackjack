@@ -21,13 +21,17 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
+import static org.rakvag.blackjack.domene.Kort.Farge.HJERTER;
+import static org.rakvag.blackjack.domene.Kort.Farge.SPAR;
+import static org.rakvag.blackjack.domene.Kort.Verdi.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class KomponenttesterIT {
+public class KomponentTests {
 
     @Autowired
     private MockMvc mockMvc;
+
     @Autowired
     private SpillServer spillServer;
 
@@ -48,10 +52,10 @@ public class KomponenttesterIT {
     public void startSpill() throws Exception {
         //ARRANGE
         when(kortstokk.blandKortene()).thenReturn(kortstokk);
-        Kort spillerKort1 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.TI);
-        Kort spillerKort2 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.FEM);
-        Kort dealerKort1 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.TRE);
-        Kort dealerKort2 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.FEM);
+        Kort spillerKort1 = new Kort(HJERTER, TI);
+        Kort spillerKort2 = new Kort(HJERTER, FEM);
+        Kort dealerKort1 = new Kort(HJERTER, TRE);
+        Kort dealerKort2 = new Kort(HJERTER, FEM);
         when(kortstokk.trekk())
                 .thenReturn(spillerKort1)
                 .thenReturn(dealerKort1)
@@ -97,11 +101,11 @@ public class KomponenttesterIT {
     public void trekkKort() throws Exception {
         //ARRANGE
         when(kortstokk.blandKortene()).thenReturn(kortstokk);
-        Kort spillerKort1 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.TI);
-        Kort spillerKort2 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.FEM);
-        Kort spillerKort3 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.TO);
-        Kort dealerKort1 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.TRE);
-        Kort dealerKort2 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.FEM);
+        Kort spillerKort1 = new Kort(HJERTER, TI);
+        Kort spillerKort2 = new Kort(HJERTER, FEM);
+        Kort spillerKort3 = new Kort(HJERTER, TO);
+        Kort dealerKort1 = new Kort(HJERTER, TRE);
+        Kort dealerKort2 = new Kort(HJERTER, FEM);
         when(kortstokk.trekk())
                 .thenReturn(spillerKort1)
                 .thenReturn(dealerKort1)
@@ -169,17 +173,16 @@ public class KomponenttesterIT {
     public void trekkKort_SpillFullført() throws Exception {
         //ARRANGE
         when(kortstokk.blandKortene()).thenReturn(kortstokk);
-        Kort spillerKort1 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.TI);
-        Kort spillerKort2 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.ESS);
-        Kort dealerKort1 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.TRE);
-        Kort dealerKort2 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.FEM);
+        Kort spillerKort1 = new Kort(HJERTER, TI);
+        Kort spillerKort2 = new Kort(HJERTER, ESS);
+        Kort dealerKort1 = new Kort(HJERTER, TRE);
+        Kort dealerKort2 = new Kort(HJERTER, FEM);
         when(kortstokk.trekk())
                 .thenReturn(spillerKort1)
                 .thenReturn(dealerKort1)
                 .thenReturn(spillerKort2)
                 .thenReturn(dealerKort2);
-
-        //ACT
+        //Starter spillet, som fullføres med en gang pga black jack på spiler
         mockMvc.perform(
                 MockMvcRequestBuilders
                         .post("/spill")
@@ -205,11 +208,11 @@ public class KomponenttesterIT {
     public void stå() throws Exception {
         //ARRANGE
         when(kortstokk.blandKortene()).thenReturn(kortstokk);
-        Kort spillerKort1 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.TI);
-        Kort spillerKort2 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.FEM);
-        Kort spillerKort3 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.SEKS);
-        Kort dealerKort1 = new Kort(Kort.Farge.SPAR, Kort.Verdi.KNEKT);
-        Kort dealerKort2 = new Kort(Kort.Farge.SPAR, Kort.Verdi.NI);
+        Kort spillerKort1 = new Kort(HJERTER, TI);
+        Kort spillerKort2 = new Kort(HJERTER, FEM);
+        Kort spillerKort3 = new Kort(HJERTER, SEKS);
+        Kort dealerKort1 = new Kort(SPAR, KNEKT);
+        Kort dealerKort2 = new Kort(SPAR, NI);
         when(kortstokk.trekk())
                 .thenReturn(spillerKort1)
                 .thenReturn(dealerKort1)
@@ -283,10 +286,10 @@ public class KomponenttesterIT {
     public void stå_SpillFullført() throws Exception {
         //ARRANGE
         when(kortstokk.blandKortene()).thenReturn(kortstokk);
-        Kort spillerKort1 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.TI);
-        Kort spillerKort2 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.ESS);
-        Kort dealerKort1 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.TRE);
-        Kort dealerKort2 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.FEM);
+        Kort spillerKort1 = new Kort(HJERTER, TI);
+        Kort spillerKort2 = new Kort(HJERTER, ESS);
+        Kort dealerKort1 = new Kort(HJERTER, TRE);
+        Kort dealerKort2 = new Kort(HJERTER, FEM);
         when(kortstokk.trekk())
                 .thenReturn(spillerKort1)
                 .thenReturn(dealerKort1)
@@ -318,10 +321,10 @@ public class KomponenttesterIT {
     public void hentSpill() throws Exception {
         //ARRANGE
         when(kortstokk.blandKortene()).thenReturn(kortstokk);
-        Kort spillerKort1 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.TI);
-        Kort spillerKort2 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.FEM);
-        Kort dealerKort1 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.TRE);
-        Kort dealerKort2 = new Kort(Kort.Farge.HJERTER, Kort.Verdi.FEM);
+        Kort spillerKort1 = new Kort(HJERTER, TI);
+        Kort spillerKort2 = new Kort(HJERTER, FEM);
+        Kort dealerKort1 = new Kort(HJERTER, TRE);
+        Kort dealerKort2 = new Kort(HJERTER, FEM);
         when(kortstokk.trekk())
                 .thenReturn(spillerKort1)
                 .thenReturn(dealerKort1)
