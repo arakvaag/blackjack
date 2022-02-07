@@ -1,10 +1,11 @@
 package org.rakvag.blackjack.domene
 
+import org.rakvag.blackjack.Provider
 import org.rakvag.blackjack.domene.Spill.Status.*
 
 class Spill(
     spillersNavn: String,
-    private val kortstokk: Kortstokk
+    provider: Provider
 ) {
 
     enum class Status {
@@ -12,10 +13,12 @@ class Spill(
         DEALER_BUST, DEALER_VANT_PÅ_POENG
     }
 
+    private val kortstokk = provider.hentNyKortstokk()
+
     private val spiller: Spiller
     val spillersNavn: String
         get() = spiller.navn
-    val spillerskort: List<Kort>
+    val spillersKort: List<Kort>
         get() = spiller.kort
     val spillersPoengsummer: List<Int>
         get() = spiller.poengsummer
@@ -35,7 +38,10 @@ class Spill(
     var status: Status
         private set
 
+    val id: Int
+
     init {
+        kortstokk.blandKortene()
         val kort1 = kortstokk.trekkKort()
         val kort2 = kortstokk.trekkKort()
         val kort3 = kortstokk.trekkKort()
@@ -46,6 +52,7 @@ class Spill(
         if (status != I_GANG) {
             dealer.snuKortene()
         }
+        id = provider.hentNySpillId()
     }
 
     fun spillerTrekkerKort() {

@@ -15,6 +15,23 @@ class KortstokkTest {
     }
 
     @Test
+    fun `kort-klassen har toString som gir to-karakters versjon av kortet`() {
+        assertEquals("HA", Kort(Farge.HJERTER, Verdi.ESS).toString())
+        assertEquals("H2", Kort(Farge.HJERTER, Verdi.TO).toString())
+        assertEquals("H3", Kort(Farge.HJERTER, Verdi.TRE).toString())
+        assertEquals("S4", Kort(Farge.SPAR, Verdi.FIRE).toString())
+        assertEquals("S5", Kort(Farge.SPAR, Verdi.FEM).toString())
+        assertEquals("S6", Kort(Farge.SPAR, Verdi.SEKS).toString())
+        assertEquals("R7", Kort(Farge.RUTER, Verdi.SJU).toString())
+        assertEquals("R8", Kort(Farge.RUTER, Verdi.ÅTTE).toString())
+        assertEquals("R9", Kort(Farge.RUTER, Verdi.NI).toString())
+        assertEquals("K10", Kort(Farge.KLØVER, Verdi.TI).toString())
+        assertEquals("KJ", Kort(Farge.KLØVER, Verdi.KNEKT).toString())
+        assertEquals("KQ", Kort(Farge.KLØVER, Verdi.DAME).toString())
+        assertEquals("KK", Kort(Farge.KLØVER, Verdi.KONGE).toString())
+    }
+
+    @Test
     fun `blander kortstokken`() {
         val ublandetKortstokkNr1 = Kortstokk()
         val korteneFraKortstokkNr1 = mutableListOf<Kort>()

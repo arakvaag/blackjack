@@ -5,6 +5,10 @@ data class Kort(
     val verdi: Verdi
 ) {
 
+    override fun toString(): String {
+        return farge.kode + verdi.kode
+    }
+
     enum class Farge(val kode: Char) {
         SPAR('S'), HJERTER('H'), RUTER('R'), KLØVER('K');
     }
@@ -14,7 +18,7 @@ data class Kort(
         ÅTTE("8"), NI("9"), TI("10"), KNEKT("J", 10), DAME("Q",10),
         KONGE("K", 10), ESS("A", 11);
 
-        private val kode: String
+        val kode: String
         val tallVerdi: Int
 
         constructor(kode: String, tallVerdi: Int) {

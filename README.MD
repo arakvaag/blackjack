@@ -7,12 +7,12 @@ POST-kall mot http://localhost:8080/spill <br/>
 Body: { "spillersNavn": "<navn på spilleren>" }
 
 ### Trekke nytt kort
-POST-kall mot http://localhost:8080/spill/trekkKort <br/>
+POST-kall mot http://localhost:8080/spill/<spillId>/trekk <br/>
 Body: ingen
 
 ### Velge å stå
-POST-kall mot http://localhost:8080/spill/staa <br/>
+POST-kall mot http://localhost:8080/spill/<spillId>/staa <br/>
 Body: ingen
 
 ### Hente info om aktivt spill
-GET-kall mot http://localhost:8080/spill <br/>
+GET-kall mot http://localhost:8080/spill/<spillId> <br/>

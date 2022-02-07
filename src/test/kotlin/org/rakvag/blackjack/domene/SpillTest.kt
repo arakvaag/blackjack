@@ -3,15 +3,26 @@ package org.rakvag.blackjack.domene
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.rakvag.blackjack.Provider
 import org.rakvag.blackjack.domene.Kort.Farge.HJERTER
 import org.rakvag.blackjack.domene.Kort.Farge.SPAR
 import org.rakvag.blackjack.domene.Kort.Verdi.*
 
 class SpillTest {
 
+    private val provider = mockk<Provider>()
+    private var sistTildelteId = 0
     private val kortstokk = mockk<Kortstokk>()
+
+    @BeforeEach
+    fun setup() {
+        every { provider.hentNyKortstokk() } returns kortstokk
+        every { provider.hentNySpillId() } returns ++sistTildelteId
+        every { kortstokk.blandKortene() } returns Unit
+    }
 
     @Test
     fun `oppretter nytt spill - ingen blackjack`() {
@@ -25,13 +36,13 @@ class SpillTest {
         )
 
         //ACT
-        val spill = Spill(spillersNavn, kortstokk)
+        val spill = Spill(spillersNavn, provider)
 
         //ASSERT
         assertEquals(Spill.Status.I_GANG, spill.status)
 
         assertEquals(spillersNavn, spill.spillersNavn)
-        assertEquals(listOf(Kort(HJERTER, TO), Kort(HJERTER, FIRE)), spill.spillerskort)
+        assertEquals(listOf(Kort(HJERTER, TO), Kort(HJERTER, FIRE)), spill.spillersKort)
         assertEquals(listOf(6), spill.spillersPoengsummer)
 
         assertEquals(listOf(Kort(HJERTER, TRE)), spill.dealersÅpneKort)
@@ -53,13 +64,13 @@ class SpillTest {
         )
 
         //ACT
-        val spill = Spill(spillersNavn, kortstokk)
+        val spill = Spill(spillersNavn, provider)
 
         //ASSERT
         assertEquals(Spill.Status.SPILLER_VANT_MED_BLACKJACK, spill.status)
 
         assertEquals(spillersNavn, spill.spillersNavn)
-        assertEquals(listOf(Kort(HJERTER, ESS), Kort(HJERTER, KONGE)), spill.spillerskort)
+        assertEquals(listOf(Kort(HJERTER, ESS), Kort(HJERTER, KONGE)), spill.spillersKort)
         assertEquals(listOf(11, 21), spill.spillersPoengsummer)
 
         assertEquals(listOf(Kort(HJERTER, TRE), Kort(HJERTER, FEM)), spill.dealersÅpneKort)
@@ -79,13 +90,13 @@ class SpillTest {
         )
 
         //ACT
-        val spill = Spill(spillersNavn, kortstokk)
+        val spill = Spill(spillersNavn, provider)
 
         //ASSERT
         assertEquals(Spill.Status.DEALER_VANT_MED_BLACKJACK, spill.status)
 
         assertEquals(spillersNavn, spill.spillersNavn)
-        assertEquals(listOf(Kort(HJERTER, TRE), Kort(HJERTER, FIRE)), spill.spillerskort)
+        assertEquals(listOf(Kort(HJERTER, TRE), Kort(HJERTER, FIRE)), spill.spillersKort)
         assertEquals(listOf(7), spill.spillersPoengsummer)
 
         assertEquals(listOf(Kort(HJERTER, ESS), Kort(HJERTER, KONGE)), spill.dealersÅpneKort)
@@ -105,13 +116,13 @@ class SpillTest {
         )
 
         //ACT
-        val spill = Spill(spillersNavn, kortstokk)
+        val spill = Spill(spillersNavn, provider)
 
         //ASSERT
         assertEquals(Spill.Status.PUSH, spill.status)
 
         assertEquals(spillersNavn, spill.spillersNavn)
-        assertEquals(listOf(Kort(SPAR, ESS), Kort(SPAR, KONGE)), spill.spillerskort)
+        assertEquals(listOf(Kort(SPAR, ESS), Kort(SPAR, KONGE)), spill.spillersKort)
         assertEquals(listOf(11, 21), spill.spillersPoengsummer)
 
         assertEquals(listOf(Kort(HJERTER, ESS), Kort(HJERTER, KONGE)), spill.dealersÅpneKort)
@@ -129,7 +140,7 @@ class SpillTest {
             Kort(HJERTER, SEKS),
             Kort(HJERTER, SJU)
         )
-        val spill = Spill("Testesen", kortstokk)
+        val spill = Spill("Testesen", provider)
 
         //ACT
         spill.spillerTrekkerKort()
@@ -137,7 +148,7 @@ class SpillTest {
         //ASSERT
         assertEquals(Spill.Status.I_GANG, spill.status)
 
-        assertEquals(listOf(Kort(HJERTER, TRE), Kort(HJERTER, FEM), Kort(HJERTER, SJU)), spill.spillerskort)
+        assertEquals(listOf(Kort(HJERTER, TRE), Kort(HJERTER, FEM), Kort(HJERTER, SJU)), spill.spillersKort)
         assertEquals(listOf(15), spill.spillersPoengsummer)
 
         assertEquals(listOf(Kort(HJERTER, FIRE)), spill.dealersÅpneKort)
@@ -155,7 +166,7 @@ class SpillTest {
             Kort(HJERTER, SEKS),
             Kort(SPAR, SJU)
         )
-        val spill = Spill("Testesen", kortstokk)
+        val spill = Spill("Testesen", provider)
 
         //ACT
         spill.spillerTrekkerKort()
@@ -163,7 +174,7 @@ class SpillTest {
         //ASSERT
         assertEquals(Spill.Status.SPILLER_BUST, spill.status)
 
-        assertEquals(listOf(Kort(SPAR, FEM), Kort(SPAR, TI), Kort(SPAR, SJU)), spill.spillerskort)
+        assertEquals(listOf(Kort(SPAR, FEM), Kort(SPAR, TI), Kort(SPAR, SJU)), spill.spillersKort)
         assertEquals(listOf(22), spill.spillersPoengsummer)
 
         assertEquals(listOf(Kort(HJERTER, FIRE), Kort(HJERTER, SEKS)), spill.dealersÅpneKort)
@@ -181,7 +192,7 @@ class SpillTest {
             Kort(HJERTER, SEKS),
             Kort(HJERTER, SJU)
         )
-        val spill = Spill("Testesen", kortstokk)
+        val spill = Spill("Testesen", provider)
 
         //ACT
         spill.spillerStår()
@@ -189,7 +200,7 @@ class SpillTest {
         //ASSERT
         assertEquals(Spill.Status.SPILLER_VANT_PÅ_POENG, spill.status)
 
-        assertEquals(listOf(Kort(SPAR, KONGE), Kort(SPAR, ÅTTE)), spill.spillerskort)
+        assertEquals(listOf(Kort(SPAR, KONGE), Kort(SPAR, ÅTTE)), spill.spillersKort)
         assertEquals(listOf(18), spill.spillersPoengsummer)
 
         assertEquals(listOf(Kort(HJERTER, FIRE), Kort(HJERTER, SEKS), Kort(HJERTER, SJU)), spill.dealersÅpneKort)
@@ -207,7 +218,7 @@ class SpillTest {
             Kort(HJERTER, SJU),
             Kort(HJERTER, KONGE)
         )
-        val spill = Spill("Testesen", kortstokk)
+        val spill = Spill("Testesen", provider)
 
         //ACT
         spill.spillerStår()
@@ -215,7 +226,7 @@ class SpillTest {
         //ASSERT
         assertEquals(Spill.Status.DEALER_BUST, spill.status)
 
-        assertEquals(listOf(Kort(SPAR, KONGE), Kort(SPAR, ÅTTE)), spill.spillerskort)
+        assertEquals(listOf(Kort(SPAR, KONGE), Kort(SPAR, ÅTTE)), spill.spillersKort)
         assertEquals(listOf(18), spill.spillersPoengsummer)
 
         assertEquals(listOf(Kort(HJERTER, FEM), Kort(HJERTER, SJU), Kort(HJERTER, KONGE)), spill.dealersÅpneKort)
@@ -234,7 +245,7 @@ class SpillTest {
             Kort(SPAR, NI),
             Kort(HJERTER, NI)
         )
-        val spill = Spill("Testesen", kortstokk)
+        val spill = Spill("Testesen", provider)
 
         //ACT
         spill.spillerTrekkerKort()
@@ -243,7 +254,7 @@ class SpillTest {
         //ASSERT
         assertEquals(Spill.Status.DEALER_VANT_PÅ_POENG, spill.status)
 
-        assertEquals(listOf(Kort(SPAR, TRE), Kort(SPAR, SJU), Kort(SPAR, NI)), spill.spillerskort)
+        assertEquals(listOf(Kort(SPAR, TRE), Kort(SPAR, SJU), Kort(SPAR, NI)), spill.spillersKort)
         assertEquals(listOf(19), spill.spillersPoengsummer)
 
         assertEquals(listOf(Kort(HJERTER, FEM), Kort(HJERTER, SEKS), Kort(HJERTER, NI)), spill.dealersÅpneKort)
@@ -262,7 +273,7 @@ class SpillTest {
             Kort(SPAR, KNEKT),
             Kort(HJERTER, ÅTTE)
         )
-        val spill = Spill("Testesen", kortstokk)
+        val spill = Spill("Testesen", provider)
 
         //ACT
         spill.spillerTrekkerKort()
@@ -271,7 +282,7 @@ class SpillTest {
         //ASSERT
         assertEquals(Spill.Status.SPILLER_VANT_PÅ_POENG, spill.status)
 
-        assertEquals(listOf(Kort(SPAR, TRE), Kort(SPAR, SJU), Kort(SPAR, KNEKT)), spill.spillerskort)
+        assertEquals(listOf(Kort(SPAR, TRE), Kort(SPAR, SJU), Kort(SPAR, KNEKT)), spill.spillersKort)
         assertEquals(listOf(20), spill.spillersPoengsummer)
 
         assertEquals(listOf(Kort(HJERTER, FEM), Kort(HJERTER, SEKS), Kort(HJERTER, ÅTTE)), spill.dealersÅpneKort)
@@ -289,7 +300,7 @@ class SpillTest {
             Kort(SPAR, KONGE),
             Kort(HJERTER, SEKS),
         )
-        val spill = Spill("Testesen", kortstokk)
+        val spill = Spill("Testesen", provider)
 
         //ACT
         assertThrows<IllegalStateException> {
@@ -307,7 +318,7 @@ class SpillTest {
             Kort(SPAR, KONGE),
             Kort(HJERTER, SEKS),
         )
-        val spill = Spill("Testesen", kortstokk)
+        val spill = Spill("Testesen", provider)
 
         //ACT
         assertThrows<IllegalStateException> {
