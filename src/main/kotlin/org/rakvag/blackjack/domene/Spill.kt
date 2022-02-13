@@ -1,19 +1,45 @@
 package org.rakvag.blackjack.domene
 
-import org.rakvag.blackjack.Provider
+import org.rakvag.blackjack.IdProvider
+import org.rakvag.blackjack.KortstokkProvider
 import org.rakvag.blackjack.domene.Spill.Status.*
 
-class Spill(
-    spillersNavn: String,
-    provider: Provider
-) {
+class Spill {
+
+    constructor(
+        spillersNavn: String,
+        kortstokkProvider: KortstokkProvider,
+        idProvider: IdProvider
+    ) {
+        this.kortstokk = kortstokkProvider.hentNyKortstokk()
+        kortstokk.blandKortene()
+        val kort1 = kortstokk.trekkKort()
+        val kort2 = kortstokk.trekkKort()
+        val kort3 = kortstokk.trekkKort()
+        val kort4 = kortstokk.trekkKort()
+        this.spiller = Spiller(spillersNavn, listOf(kort1, kort3), idProvider)
+        this.dealer = Dealer(listOf(kort2, kort4), idProvider)
+        this.status = beregnStatus()
+        if (status != I_GANG) {
+            dealer.snuKortene()
+        }
+        id = idProvider.hentNySpillId()
+    }
+
+    constructor(state: State) {
+        this.id = state.id
+        this.kortstokk = KortstokkImpl(state.kortstokk)
+        this.spiller = Spiller(state.spiller!!)
+        this.dealer = Dealer(state.dealer!!)
+        this.status = state.status
+    }
 
     enum class Status {
         I_GANG, SPILLER_VANT_MED_BLACKJACK, DEALER_VANT_MED_BLACKJACK, SPILLER_VANT_PÅ_POENG, PUSH, SPILLER_BUST,
         DEALER_BUST, DEALER_VANT_PÅ_POENG
     }
 
-    private val kortstokk = provider.hentNyKortstokk()
+    private val kortstokk: Kortstokk
 
     private val spiller: Spiller
     val spillersNavn: String
@@ -38,22 +64,7 @@ class Spill(
     var status: Status
         private set
 
-    val id: Int
-
-    init {
-        kortstokk.blandKortene()
-        val kort1 = kortstokk.trekkKort()
-        val kort2 = kortstokk.trekkKort()
-        val kort3 = kortstokk.trekkKort()
-        val kort4 = kortstokk.trekkKort()
-        this.spiller = Spiller(spillersNavn, listOf(kort1, kort3))
-        this.dealer = Dealer(listOf(kort2, kort4))
-        this.status = beregnStatus()
-        if (status != I_GANG) {
-            dealer.snuKortene()
-        }
-        id = provider.hentNySpillId()
-    }
+    val id: Long
 
     fun spillerTrekkerKort() {
         check(status == I_GANG) { "Spillet er avsluttet" }
@@ -66,6 +77,7 @@ class Spill(
 
     fun spillerStår() {
         check(status == I_GANG) { "Spillet er avsluttet" }
+        spiller.stå()
         status = beregnStatus()
         while (status == I_GANG) {
             dealer.taImotKort(kortstokk.trekkKort())
@@ -97,20 +109,52 @@ class Spill(
             return DEALER_BUST
         }
 
-        //Hvis dealer har 17 eller høyere (og ikke bust), må dealer stå
-        if (dealer.poengsummer.any { it == 17 || it == 18 || it == 19 || it == 20 || it == 21 }) {
-            val høyestPoengsumSpiller = spiller.poengsummer.filter { it < 22 }.maxOrNull()!!
-            val høyestePoengsumDealer = dealer.poengsummer.filter { it < 22 }.maxOrNull()!!
-            return if (høyestPoengsumSpiller == høyestePoengsumDealer) {
-                PUSH
-            } else if (høyestPoengsumSpiller > høyestePoengsumDealer) {
-                SPILLER_VANT_PÅ_POENG
-            } else {
-                DEALER_VANT_PÅ_POENG
+        //Hvis spiller står, og dealer har 17 eller høyere (og ikke bust), må dealer stå
+        if (spiller.står) {
+            if (dealer.poengsummer.any { it == 17 || it == 18 || it == 19 || it == 20 || it == 21 }) {
+                val høyestPoengsumSpiller = spiller.poengsummer.filter { it < 22 }.maxOrNull()!!
+                val høyestePoengsumDealer = dealer.poengsummer.filter { it < 22 }.maxOrNull()!!
+                return if (høyestPoengsumSpiller == høyestePoengsumDealer) {
+                    PUSH
+                } else if (høyestPoengsumSpiller > høyestePoengsumDealer) {
+                    SPILLER_VANT_PÅ_POENG
+                } else {
+                    DEALER_VANT_PÅ_POENG
+                }
             }
         }
 
         return I_GANG
     }
+
+    //region persistering
+    fun eksporterState(): State {
+        return State(
+            id,
+            status,
+            kortstokk.eksporterState(),
+            spiller.eksporterState(),
+            dealer.eksporterState()
+        )
+    }
+    private var persistertState: State? = null
+    fun harVærtPersistert(): Boolean {
+        return persistertState != null
+    }
+    fun registrerPersistert() {
+        persistertState = eksporterState()
+    }
+    fun erEndretEtterSistePersistering(): Boolean {
+        check(persistertState != null) { "Har ikke vært persistert" }
+        return eksporterState() != persistertState
+    }
+    data class State(
+        val id: Long,
+        val status: Status,
+        val kortstokk: List<Kort>,
+        val spiller: Spiller.State?,
+        val dealer: Dealer.State?
+    )
+    //endregion
 
 }

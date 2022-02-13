@@ -2,16 +2,14 @@ package org.rakvag.blackjack
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.mockk.every
-import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.rakvag.blackjack.domene.Kort
 import org.rakvag.blackjack.domene.Kort.Farge.*
 import org.rakvag.blackjack.domene.Kort.Verdi
-import org.rakvag.blackjack.domene.Kortstokk
 import org.skyscreamer.jsonassert.JSONAssert
 import org.skyscreamer.jsonassert.JSONCompareMode
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,34 +25,31 @@ import java.net.http.HttpResponse.BodyHandlers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class BlackjackApplicationTests {
 
-	@MockBean
-	private lateinit var provider: Provider
-
 	@LocalServerPort
 	private var serverPort: Int = -1
+
+	@MockBean
+	private lateinit var kortstokkProvider: KortstokkProvider
 
 	@Autowired
 	private lateinit var objectmapper: ObjectMapper
 
-	private val kortstokk = mockk<Kortstokk>()
-
-	private var sistReturnerteId = 0
+	private val testKortstokk = TestKortstokk()
 
 	@BeforeEach
 	fun setup() {
-		Mockito.`when`(provider.hentNyKortstokk()).thenReturn(kortstokk)
-		Mockito.`when`(provider.hentNySpillId()).thenReturn(++sistReturnerteId)
-		every { kortstokk.blandKortene() } returns Unit
+		Mockito.`when`(kortstokkProvider.hentNyKortstokk()).thenReturn(testKortstokk)
 	}
 
 	@Test
 	fun `opprette nytt spill`() {
-		every { kortstokk.trekkKort() } returnsMany listOf(
+		//ARRANGE
+		testKortstokk.gjørKlarKortstokken(listOf(
 			Kort(HJERTER, Verdi.FEM),
 			Kort(RUTER, Verdi.ÅTTE),
 			Kort(KLØVER, Verdi.TRE),
-			Kort(HJERTER, Verdi.FIRE),
-		)
+			Kort(HJERTER, Verdi.FIRE)
+		))
 
 		//ACT
 		val httpClient = HttpClient.newHttpClient()
@@ -78,25 +73,26 @@ class BlackjackApplicationTests {
 					"dealersÅpneKort":[
 						"R8"
 					],
-					"status":"I_GANG",
-					"spillId": 1
+					"status":"I_GANG"
 				}
 			""".trimIndent(),
 			response.body(),
 			JSONCompareMode.LENIENT
 		)
+		assertTrue(objectmapper.readValue(response.body(), Map::class.java).containsKey("spillId"))
 
 	}
 
 	@Test
 	fun `hente informasjon om spill`() {
-		every { kortstokk.trekkKort() } returnsMany listOf(
+		val httpClient = HttpClient.newHttpClient()
+
+		testKortstokk.gjørKlarKortstokken(listOf(
 			Kort(HJERTER, Verdi.FEM),
 			Kort(RUTER, Verdi.ÅTTE),
 			Kort(KLØVER, Verdi.TRE),
-			Kort(HJERTER, Verdi.FIRE),
-		)
-		val httpClient = HttpClient.newHttpClient()
+			Kort(HJERTER, Verdi.FIRE)
+		))
 
 		var httpRequest = HttpRequest.newBuilder()
 			.uri(URI("http://localhost:$serverPort/spill"))
@@ -138,14 +134,15 @@ class BlackjackApplicationTests {
 
 	@Test
 	fun `spiller står`() {
-		every { kortstokk.trekkKort() } returnsMany listOf(
+		val httpClient = HttpClient.newHttpClient()
+
+		testKortstokk.gjørKlarKortstokken(listOf(
 			Kort(HJERTER, Verdi.KONGE),
 			Kort(RUTER, Verdi.ÅTTE),
 			Kort(KLØVER, Verdi.NI),
 			Kort(HJERTER, Verdi.FIRE),
 			Kort(SPAR, Verdi.NI)
-		)
-		val httpClient = HttpClient.newHttpClient()
+		))
 
 		var httpRequest = HttpRequest.newBuilder()
 			.uri(URI("http://localhost:$serverPort/spill"))
@@ -176,7 +173,7 @@ class BlackjackApplicationTests {
 						"R8","H4","S9"
 					],
 					"status":"DEALER_VANT_PÅ_POENG",
-					"spillId": 1
+					"spillId": $spillId
 				}
 			""".trimIndent(),
 			response.body(),
@@ -187,14 +184,15 @@ class BlackjackApplicationTests {
 
 	@Test
 	fun `spiller trekker kort`() {
-		every { kortstokk.trekkKort() } returnsMany listOf(
+		val httpClient = HttpClient.newHttpClient()
+
+		testKortstokk.gjørKlarKortstokken(listOf(
 			Kort(HJERTER, Verdi.TRE),
 			Kort(RUTER, Verdi.ÅTTE),
 			Kort(KLØVER, Verdi.NI),
 			Kort(HJERTER, Verdi.FIRE),
 			Kort(SPAR, Verdi.FEM)
-		)
-		val httpClient = HttpClient.newHttpClient()
+		))
 
 		var httpRequest = HttpRequest.newBuilder()
 			.uri(URI("http://localhost:$serverPort/spill"))
@@ -225,7 +223,7 @@ class BlackjackApplicationTests {
 						"R8"
 					],
 					"status":"I_GANG",
-					"spillId": 1
+					"spillId": $spillId
 				}
 			""".trimIndent(),
 			response.body(),
@@ -233,4 +231,63 @@ class BlackjackApplicationTests {
 		)
 
 	}
+
+	@Test
+	fun `spiller trekker kort flere ganger, og så står`() {
+		val httpClient = HttpClient.newHttpClient()
+
+		testKortstokk.gjørKlarKortstokken(listOf(
+			Kort(SPAR, Verdi.TRE),     // Spiller kort 1
+			Kort(HJERTER, Verdi.ÅTTE), // Dealer kort 1
+			Kort(SPAR, Verdi.FIRE),    // Spiller kort 2
+			Kort(HJERTER, Verdi.FIRE), // Dealer kort 2
+			Kort(SPAR, Verdi.FEM),     // Spiller kort 3
+			Kort(SPAR, Verdi.ÅTTE),      // Spiller kort 4
+			Kort(HJERTER, Verdi.FEM)   // Dealer kort 3
+		))
+
+		var httpRequest = HttpRequest.newBuilder().uri(URI("http://localhost:$serverPort/spill"))
+			.POST(BodyPublishers.ofString(""" { "spillersNavn": "Testesen" }""")).build()
+		val opprettResponse = httpClient.send(httpRequest, BodyHandlers.ofString(Charsets.UTF_8))
+		val spillId = objectmapper.readValue<Map<String, Any>>(opprettResponse.body())["spillId"] as Int
+
+		httpRequest = HttpRequest.newBuilder().uri(URI("http://localhost:$serverPort/spill/$spillId/trekk"))
+			.POST(BodyPublishers.noBody()).build()
+		httpClient.send(httpRequest, BodyHandlers.ofString(Charsets.UTF_8))
+
+		httpRequest = HttpRequest.newBuilder().uri(URI("http://localhost:$serverPort/spill/$spillId/trekk"))
+			.POST(BodyPublishers.noBody()).build()
+		httpClient.send(httpRequest, BodyHandlers.ofString(Charsets.UTF_8))
+
+		//ACT
+		httpRequest = HttpRequest.newBuilder().uri(URI("http://localhost:$serverPort/spill/$spillId/staa"))
+			.POST(BodyPublishers.noBody()).build()
+		val response = httpClient.send(httpRequest, BodyHandlers.ofString(Charsets.UTF_8))
+
+		//ASSERT
+		assertEquals(200, response.statusCode())
+		JSONAssert.assertEquals(
+			"""
+				{
+					"spillersNavn":"Testesen",
+					"spillersKort":[
+						"S3","S4","S5","S8"
+					],
+					"spillersPoengsummer":[20],
+					"antallKortHosDealer":3,
+					"dealersÅpneKort":[
+						"H8","H4","H5"
+					],
+					"dealersPoengsummer":[17],
+					"status":"SPILLER_VANT_PÅ_POENG",
+					"spillId": $spillId
+				}
+			""".trimIndent(),
+			response.body(),
+			JSONCompareMode.LENIENT
+		)
+
+	}
+
+
 }

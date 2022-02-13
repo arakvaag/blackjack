@@ -1,18 +1,14 @@
 package org.rakvag.blackjack
 
 import org.rakvag.blackjack.domene.Kortstokk
+import org.rakvag.blackjack.domene.KortstokkImpl
 import org.springframework.stereotype.Component
 
 @Component
-class Provider {
-
-    private var sistReturnerteId: Int = 0
+class KortstokkProvider {
 
     fun hentNyKortstokk(): Kortstokk {
-        return Kortstokk()
+        return KortstokkImpl()
     }
 
-    fun hentNySpillId(): Int {
-        return ++sistReturnerteId
-    }
 }

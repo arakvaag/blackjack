@@ -33,13 +33,13 @@ class KortstokkTest {
 
     @Test
     fun `blander kortstokken`() {
-        val ublandetKortstokkNr1 = Kortstokk()
+        val ublandetKortstokkNr1 = KortstokkImpl()
         val korteneFraKortstokkNr1 = mutableListOf<Kort>()
         repeat(52) {
             korteneFraKortstokkNr1.add(ublandetKortstokkNr1.trekkKort())
         }
 
-        val ublandetKortstokkNr2 = Kortstokk()
+        val ublandetKortstokkNr2 = KortstokkImpl()
         val korteneFraKortstokkNr2 = mutableListOf<Kort>()
         repeat(52) {
             korteneFraKortstokkNr2.add(ublandetKortstokkNr2.trekkKort())
@@ -48,7 +48,7 @@ class KortstokkTest {
         //Sjekker at ny-opprettede kortstokker alltid har samme rekkefølge på kortene
         assertEquals(korteneFraKortstokkNr1, korteneFraKortstokkNr2)
 
-        val blandetKortstokk = Kortstokk()
+        val blandetKortstokk = KortstokkImpl()
         blandetKortstokk.blandKortene()
         val korteneFraBlandetKortstokk = mutableListOf<Kort>()
         repeat(52) {
@@ -61,7 +61,7 @@ class KortstokkTest {
 
     @Test
     fun `ny kortstokk gir 52 forskjellige kort`() {
-        val kortstokk = Kortstokk()
+        val kortstokk = KortstokkImpl()
 
         val trekteKort = mutableSetOf<Kort>()
         repeat(52) {

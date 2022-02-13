@@ -16,3 +16,8 @@ Body: ingen
 
 ### Hente info om aktivt spill
 GET-kall mot http://localhost:8080/spill/<spillId> <br/>
+
+
+### Sette opp database
+docker pull postgres
+docker run --name blackjack_db -e POSTGRES_PASSWORD=<passord> -p 5432:5432 -d postgres

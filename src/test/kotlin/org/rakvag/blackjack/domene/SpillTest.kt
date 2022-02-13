@@ -6,21 +6,24 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.rakvag.blackjack.Provider
-import org.rakvag.blackjack.domene.Kort.Farge.HJERTER
-import org.rakvag.blackjack.domene.Kort.Farge.SPAR
+import org.rakvag.blackjack.IdProvider
+import org.rakvag.blackjack.KortstokkProvider
+import org.rakvag.blackjack.domene.Kort.Farge.*
 import org.rakvag.blackjack.domene.Kort.Verdi.*
 
 class SpillTest {
 
-    private val provider = mockk<Provider>()
-    private var sistTildelteId = 0
-    private val kortstokk = mockk<Kortstokk>()
+    private val kortstokkProvider = mockk<KortstokkProvider>()
+    private val iDProvider = mockk<IdProvider>()
+    private var sistTildelteId = 0L
+    private val kortstokk = mockk<KortstokkImpl>()
 
     @BeforeEach
     fun setup() {
-        every { provider.hentNyKortstokk() } returns kortstokk
-        every { provider.hentNySpillId() } returns ++sistTildelteId
+        every { kortstokkProvider.hentNyKortstokk() } returns kortstokk
+        every { iDProvider.hentNySpillId() } returns ++sistTildelteId
+        every { iDProvider.hentNySpillerId() } returns ++sistTildelteId
+        every { iDProvider.hentNyDealerId() } returns ++sistTildelteId
         every { kortstokk.blandKortene() } returns Unit
     }
 
@@ -36,7 +39,7 @@ class SpillTest {
         )
 
         //ACT
-        val spill = Spill(spillersNavn, provider)
+        val spill = Spill(spillersNavn, kortstokkProvider, iDProvider)
 
         //ASSERT
         assertEquals(Spill.Status.I_GANG, spill.status)
@@ -64,7 +67,7 @@ class SpillTest {
         )
 
         //ACT
-        val spill = Spill(spillersNavn, provider)
+        val spill = Spill(spillersNavn, kortstokkProvider, iDProvider)
 
         //ASSERT
         assertEquals(Spill.Status.SPILLER_VANT_MED_BLACKJACK, spill.status)
@@ -90,7 +93,7 @@ class SpillTest {
         )
 
         //ACT
-        val spill = Spill(spillersNavn, provider)
+        val spill = Spill(spillersNavn, kortstokkProvider, iDProvider)
 
         //ASSERT
         assertEquals(Spill.Status.DEALER_VANT_MED_BLACKJACK, spill.status)
@@ -116,7 +119,7 @@ class SpillTest {
         )
 
         //ACT
-        val spill = Spill(spillersNavn, provider)
+        val spill = Spill(spillersNavn, kortstokkProvider, iDProvider)
 
         //ASSERT
         assertEquals(Spill.Status.PUSH, spill.status)
@@ -140,7 +143,7 @@ class SpillTest {
             Kort(HJERTER, SEKS),
             Kort(HJERTER, SJU)
         )
-        val spill = Spill("Testesen", provider)
+        val spill = Spill("Testesen", kortstokkProvider, iDProvider)
 
         //ACT
         spill.spillerTrekkerKort()
@@ -166,7 +169,7 @@ class SpillTest {
             Kort(HJERTER, SEKS),
             Kort(SPAR, SJU)
         )
-        val spill = Spill("Testesen", provider)
+        val spill = Spill("Testesen", kortstokkProvider, iDProvider)
 
         //ACT
         spill.spillerTrekkerKort()
@@ -192,7 +195,7 @@ class SpillTest {
             Kort(HJERTER, SEKS),
             Kort(HJERTER, SJU)
         )
-        val spill = Spill("Testesen", provider)
+        val spill = Spill("Testesen", kortstokkProvider, iDProvider)
 
         //ACT
         spill.spillerStår()
@@ -218,7 +221,7 @@ class SpillTest {
             Kort(HJERTER, SJU),
             Kort(HJERTER, KONGE)
         )
-        val spill = Spill("Testesen", provider)
+        val spill = Spill("Testesen", kortstokkProvider, iDProvider)
 
         //ACT
         spill.spillerStår()
@@ -245,7 +248,7 @@ class SpillTest {
             Kort(SPAR, NI),
             Kort(HJERTER, NI)
         )
-        val spill = Spill("Testesen", provider)
+        val spill = Spill("Testesen", kortstokkProvider, iDProvider)
 
         //ACT
         spill.spillerTrekkerKort()
@@ -273,7 +276,7 @@ class SpillTest {
             Kort(SPAR, KNEKT),
             Kort(HJERTER, ÅTTE)
         )
-        val spill = Spill("Testesen", provider)
+        val spill = Spill("Testesen", kortstokkProvider, iDProvider)
 
         //ACT
         spill.spillerTrekkerKort()
@@ -300,7 +303,7 @@ class SpillTest {
             Kort(SPAR, KONGE),
             Kort(HJERTER, SEKS),
         )
-        val spill = Spill("Testesen", provider)
+        val spill = Spill("Testesen", kortstokkProvider, iDProvider)
 
         //ACT
         assertThrows<IllegalStateException> {
@@ -318,11 +321,40 @@ class SpillTest {
             Kort(SPAR, KONGE),
             Kort(HJERTER, SEKS),
         )
-        val spill = Spill("Testesen", provider)
+        val spill = Spill("Testesen", kortstokkProvider, iDProvider)
 
         //ACT
         assertThrows<IllegalStateException> {
             spill.spillerStår()
         }
     }
+
+    @Test
+    fun `fix av bug hvor dealer kunne vinne på poeng når spill opprettes`() {
+        //ARRANGE
+        val spillersNavn = "Testesen"
+        every { kortstokk.trekkKort() }.returnsMany(
+            Kort(HJERTER, TI),
+            Kort(RUTER, DAME),
+            Kort(HJERTER, FEM),
+            Kort(RUTER, KONGE)
+        )
+
+        //ACT
+        val spill = Spill(spillersNavn, kortstokkProvider, iDProvider)
+
+        //ASSERT
+        assertEquals(Spill.Status.I_GANG, spill.status)
+
+        assertEquals(spillersNavn, spill.spillersNavn)
+        assertEquals(listOf(Kort(HJERTER, TI), Kort(HJERTER, FEM)), spill.spillersKort)
+        assertEquals(listOf(15), spill.spillersPoengsummer)
+
+        assertEquals(listOf(Kort(RUTER, DAME)), spill.dealersÅpneKort)
+        assertEquals(2, spill.antallKortHosDealer)
+        assertThrows<IllegalStateException> {
+            spill.hentDealersPoengsummer()
+        }
+    }
+
 }

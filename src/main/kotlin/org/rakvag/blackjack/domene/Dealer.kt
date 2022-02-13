@@ -1,8 +1,25 @@
 package org.rakvag.blackjack.domene
 
-class Dealer(førsteToKort: List<Kort>) {
+import org.rakvag.blackjack.IdProvider
 
-    private val _kort: MutableList<Kort> = førsteToKort.toMutableList()
+class Dealer {
+
+    constructor(førsteToKort: List<Kort>, idProvider: IdProvider) {
+        this.id = idProvider.hentNyDealerId()
+        this._kort = førsteToKort.toMutableList()
+        this.poengsummer = regnUtPoengsummer(_kort)
+        this.viserAlleKort = false
+    }
+
+    constructor(state: State) {
+        this.id = state.id
+        this._kort = state.kort.toMutableList()
+        this.poengsummer = regnUtPoengsummer(_kort)
+        this.viserAlleKort = state.viserAlleKort
+    }
+
+    private val id: Long
+    private val _kort: MutableList<Kort>
 
     val åpneKort: List<Kort>
         get() {
@@ -15,10 +32,10 @@ class Dealer(førsteToKort: List<Kort>) {
     val antallKort: Int
         get() = _kort.size
 
-    var poengsummer: List<Int> = regnUtPoengsummer(_kort)
+    var poengsummer: List<Int>
         private set
 
-    var viserAlleKort: Boolean = false
+    var viserAlleKort: Boolean
         private set
 
     fun snuKortene() {
@@ -29,5 +46,16 @@ class Dealer(førsteToKort: List<Kort>) {
         _kort.add(kort)
         poengsummer = regnUtPoengsummer(_kort)
     }
+
+    //region persistering
+    fun eksporterState(): State {
+        return State(id, _kort.toList(), viserAlleKort)
+    }
+    data class State(
+        val id: Long,
+        val kort: List<Kort>,
+        val viserAlleKort: Boolean
+    )
+    //endregion
 
 }

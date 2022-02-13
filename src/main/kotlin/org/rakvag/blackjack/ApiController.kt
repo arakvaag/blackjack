@@ -3,15 +3,18 @@ package org.rakvag.blackjack
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.rakvag.blackjack.domene.Spill
+import org.rakvag.blackjack.domene.Spill.Status.I_GANG
+import org.rakvag.blackjack.persistering.Repository
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 
 @RestController
 @RequestMapping("/spill")
-class Controller(
+class ApiController(
     private val objectMapper: ObjectMapper,
-    private val provider: Provider,
+    private val kortstokkProvider: KortstokkProvider,
+    private val idProvider: IdProvider,
     private val repository: Repository
 ) {
 
@@ -19,7 +22,7 @@ class Controller(
     fun opprettNyttSpill(@RequestBody requestBody: String): ResponseEntity<String> {
         val request = objectMapper.readValue<Request>(requestBody)
 
-        val spill = Spill(request.spillersNavn, provider)
+        val spill = Spill(request.spillersNavn, kortstokkProvider, idProvider)
         val responseBody = mappSpillTilJsonResponse(spill)
 
         repository.lagre(spill)
@@ -28,14 +31,14 @@ class Controller(
     }
 
     @GetMapping(path = ["/{id}"])
-    fun hentSpill(@PathVariable("id") id: Int): ResponseEntity<String> {
+    fun hentSpill(@PathVariable("id") id: Long): ResponseEntity<String> {
         val spill = repository.hentPåId(id)
         val responseBody = mappSpillTilJsonResponse(spill)
         return ResponseEntity.ok(responseBody)
     }
 
     @PostMapping(path = ["/{id}/staa"])
-    fun spillerStår(@PathVariable("id") id: Int): ResponseEntity<String> {
+    fun spillerStår(@PathVariable("id") id: Long): ResponseEntity<String> {
         val spill = repository.hentPåId(id)
         spill.spillerStår()
         repository.lagre(spill)
@@ -44,7 +47,7 @@ class Controller(
     }
 
     @PostMapping(path = ["/{id}/trekk"])
-    fun spillerTrekkerKort(@PathVariable("id") id: Int): ResponseEntity<String> {
+    fun spillerTrekkerKort(@PathVariable("id") id: Long): ResponseEntity<String> {
         val spill = repository.hentPåId(id)
         spill.spillerTrekkerKort()
         repository.lagre(spill)
@@ -60,6 +63,7 @@ class Controller(
                 spillersPoengsummer = spill.spillersPoengsummer,
                 antallKortHosDealer = spill.antallKortHosDealer,
                 dealersÅpneKort = spill.dealersÅpneKort.map { it.toString() },
+                dealersPoengsummer = if (spill.status != I_GANG) spill.hentDealersPoengsummer() else null,
                 status = spill.status,
                 spillId = spill.id
             )
@@ -76,8 +80,9 @@ class Controller(
         val spillersPoengsummer: List<Int>,
         val antallKortHosDealer: Int,
         val dealersÅpneKort: List<String>,
+        val dealersPoengsummer: List<Int>?,
         val status: Spill.Status,
-        val spillId: Int
+        val spillId: Long
     )
 
 }
